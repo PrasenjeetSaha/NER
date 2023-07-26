@@ -1,67 +1,41 @@
 import pandas as pd
 from datetime import datetime, timedelta
 
-# Read the data from the Excel file
-data_file = "mock data.xlsx"
-df = pd.read_excel(data_file)
+# Load the data from the Excel file
+df = pd.read_excel("mock data.xlsx")
 
 def get_payment_status(company_id=None, transaction_id=None):
+    # Define the base SQL query
+    query = "SELECT company_id, transaction_id, status FROM df WHERE "
+    
     if company_id:
-        query = f"company_id == {company_id}"
+        query += f"company_id = {company_id}"
     elif transaction_id:
-        query = f"transaction_id == {transaction_id}"
+        query += f"transaction_id = {transaction_id}"
     else:
-        raise ValueError("Either company_id or transaction_id must be provided.")
-    
-    result = df.loc[df.eval(query), ["company_id", "transaction_id", "status"]]
+        return "Please provide either company_id or transaction_id."
+
+    # Execute the query
+    result = df.query(query)
+
     return result
 
-def get_date_range(input_date=None):
-    if not input_date:
-        return None, None
-    
-    if input_date == "last 3 months":
-        date2 = datetime.now()
-        date1 = date2 - timedelta(days=90)
-    elif input_date == "last 6 months":
-        date2 = datetime.now()
-        date1 = date2 - timedelta(days=180)
-    elif input_date == "last 9 months":
-        date2 = datetime.now()
-        date1 = date2 - timedelta(days=270)
-    else:
-        raise ValueError("Invalid input_date provided.")
-    
-    return date1, date2
-
-def get_payment_history(company_id, date1=None, date2=None, input_date=None):
+def get_payment_history(company_id, date1=None, date2=None):
     if not date1 and not date2:
-        date1, date2 = get_date_range(input_date)
-    
-    if not date1 or not date2:
-        raise ValueError("Invalid date range. Please provide date1 and date2 or a valid input_date.")
-    
-    query = f"company_id == {company_id} and date >= '{date1}' and date <= '{date2}'"
-    result = df.loc[df.eval(query), ["company_id", "transaction_id", "date", "transaction_amount"]]
+        # Assuming date2 is today's date and date1 is today - 3 months
+        date2 = datetime.today()
+        date1 = date2 - timedelta(days=3*30)
+    elif date1 and not date2:
+        # Assuming date2 is today's date if not provided
+        date2 = datetime.today()
+    elif not date1 and date2:
+        # Assuming date1 is 3 months before date2 if date1 is not provided
+        date1 = date2 - timedelta(days=3*30)
+
+    # Define the base SQL query
+    query = f"SELECT company_id, transaction_id, date, transaction_amount FROM df WHERE company_id={company_id} AND date BETWEEN '{date1}' AND '{date2}'"
+
+    # Execute the query
+    result = df.query(query)
+
     return result
-
-# Example usage:
-if __name__ == "__main__":
-    # Payment Status example:
-    company_id = 12345
-    transaction_id = "ABC123"
-    payment_status_result = get_payment_status(company_id=company_id)
-    print("Payment Status (Company ID):")
-    print(payment_status_result)
-    
-    payment_status_result = get_payment_status(transaction_id=transaction_id)
-    print("\nPayment Status (Transaction ID):")
-    print(payment_status_result)
-
-    # Payment History example:
-    company_id = 12345
-    input_date = "last 6 months"
-    date1, date2 = get_date_range(input_date=input_date)
-    payment_history_result = get_payment_history(company_id=company_id, date1=date1, date2=date2)
-    print("\nPayment History:")
-    print(payment_history_result)
