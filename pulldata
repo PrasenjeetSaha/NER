@@ -6,36 +6,47 @@ df = pd.read_excel("mock data.xlsx")
 
 def get_payment_status(company_id=None, transaction_id=None):
     # Define the base SQL query
-    query = "SELECT company_id, transaction_id, status FROM df WHERE "
-    
     if company_id:
-        query += f"company_id = {company_id}"
+        query = f"SELECT company_id, transaction_id, status FROM df WHERE company_id = {company_id}"
     elif transaction_id:
-        query += f"transaction_id = {transaction_id}"
+        query = f"SELECT company_id, transaction_id, status FROM df WHERE transaction_id = {transaction_id}"
     else:
         return "Please provide either company_id or transaction_id."
 
     # Execute the query
-    result = df.query(query)
+    result = pd.read_sql_query(query, con=None)
 
     return result
 
-def get_payment_history(company_id, date1=None, date2=None):
-    if not date1 and not date2:
-        # Assuming date2 is today's date and date1 is today - 3 months
+def get_payment_history(company_id, date1=None, date2=None, last_months=None):
+    if date1 and date2:
+        # Use the provided date range
+        date1 = datetime.strptime(date1, '%Y-%m-%d')
+        date2 = datetime.strptime(date2, '%Y-%m-%d')
+    elif last_months:
+        # Calculate date1 and date2 based on last_months input
         date2 = datetime.today()
-        date1 = date2 - timedelta(days=3*30)
-    elif date1 and not date2:
-        # Assuming date2 is today's date if not provided
-        date2 = datetime.today()
-    elif not date1 and date2:
-        # Assuming date1 is 3 months before date2 if date1 is not provided
-        date1 = date2 - timedelta(days=3*30)
+        date1 = date2 - timedelta(days=int(last_months)*30)
+    else:
+        return "Please provide either date1 and date2 or the last_months input."
 
     # Define the base SQL query
     query = f"SELECT company_id, transaction_id, date, transaction_amount FROM df WHERE company_id={company_id} AND date BETWEEN '{date1}' AND '{date2}'"
 
     # Execute the query
-    result = df.query(query)
+    result = pd.read_sql_query(query, con=None)
 
     return result
+
+
+# Example usage for Payment Status
+payment_status_result = get_payment_status(company_id=1234)
+print(payment_status_result)
+
+# Example usage for Payment History with date range
+payment_history_result1 = get_payment_history(company_id=5678, date1='2023-01-01', date2='2023-06-30')
+print(payment_history_result1)
+
+# Example usage for Payment History with last months
+payment_history_result2 = get_payment_history(company_id=5678, last_months=3)
+print(payment_history_result2)
