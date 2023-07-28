@@ -50,3 +50,34 @@ print(payment_history_result1)
 # Example usage for Payment History with last months
 payment_history_result2 = get_payment_history(company_id=5678, last_months=3)
 print(payment_history_result2)
+
+
+
+
+
+def get_payment_history(company_id, date1=None, date2=None, last_months=None):
+    if date1 and date2:
+        date1 = datetime.strptime(date1, '%Y-%m-%d')
+        date2 = datetime.strptime(date2, '%Y-%m-%d')
+    elif last_months:
+        date2 = datetime.today()
+        date1 = date2 - timedelta(days=int(last_months)*30)
+    else:
+        query = f"SELECT company_id, transaction_id, strftime('%m/%d/%y', date) as date, transaction_amount FROM df WHERE company_id={company_id} AND date BETWEEN COALESCE('{date1}', date) AND COALESCE('{date2}', date)"
+        result = sqldf(query)
+        return result
+
+    # Format date1 and date2 to match the date format in the DataFrame
+    date1_str = date1.strftime('%Y-%m-%d')
+    date2_str = date2.strftime('%Y-%m-%d')
+
+    query = f"SELECT company_id, transaction_id, strftime('%m/%d/%y', date) as date, transaction_amount FROM df WHERE company_id={company_id} AND date BETWEEN '{date1_str}' AND '{date2_str}'"
+    result = sqldf(query)
+    return result
+
+
+
+
+
+
+
