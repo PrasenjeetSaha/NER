@@ -77,6 +77,16 @@ def get_payment_history(company_id, date1=None, date2=None, last_months=None):
 
 
 
+def format_result(result_df):
+    if result_df.empty:
+        return "Here is what I found:\nNo data found."
+
+    # Format the DataFrame as a table in string format
+    table_str = result_df.to_string(index=False)
+
+    # Add header message
+    header = "Here is what I found:\n"
+    return header + table_str
 
 
 
