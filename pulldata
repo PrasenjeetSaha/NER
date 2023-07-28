@@ -81,8 +81,8 @@ def format_result(result_df):
     if result_df.empty:
         return "Here is what I found:\nNo data found."
 
-    # Format the DataFrame as a table in string format
-    table_str = result_df.to_string(index=False)
+    # Format the DataFrame as a table using tabulate
+    table_str = tabulate(result_df, headers='keys', tablefmt='grid', showindex=False)
 
     # Add header message
     header = "Here is what I found:\n"
