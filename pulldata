@@ -117,3 +117,68 @@ for pattern, match in result:
     fuzzy_score = fuzz.ratio(match, input_text)
     print(f"Pattern: '{pattern}', Matched Text: '{match}', Fuzzy Match Score: {fuzzy_score}")
 
+
+
+
+import spacy
+
+def extract_info_with_spacy(input_text):
+    nlp = spacy.load("en_core_web_sm")
+
+    doc = nlp(input_text)
+
+    # Initialize variables to store extracted information
+    client_id = None
+    transaction_id = None
+    date1 = None
+    date2 = None
+    term = None
+
+    # Extract client ID, transaction ID, and dates from the parsed doc
+    for ent in doc.ents:
+        if ent.label_ == 'CARDINAL':
+            # Assuming CARDINAL entities represent client IDs and transaction IDs
+            if len(ent.text) <= 11:
+                context = input_text[max(0, ent.start_char - 15):min(len(input_text), ent.end_char + 15)].lower()
+                if 'client' in context or 'client id' in context:
+                    client_id = ent.text
+            elif '-' in ent.text and ent.text.count('-') == 2:
+                context = input_text[max(0, ent.start_char - 15):min(len(input_text), ent.end_char + 15)].lower()
+                if 'transaction' in context or 'transaction id' in context:
+                    transaction_id = ent.text
+
+        if ent.label_ == 'DATE':
+            # Assuming DATE entities represent dates
+            if not date1:
+                date1 = ent.text
+            else:
+                date2 = ent.text
+
+    # Extract term if there is a numerical quantity followed by a time period
+    for token in doc:
+        if token.like_num and token.idx + len(token.text) < len(input_text):
+            next_token = doc[token.i + 1]
+            if next_token.text.lower() in {'day', 'days', 'week', 'weeks', 'month', 'months', 'year', 'years'}:
+                term = token.text
+                break
+
+    return client_id, transaction_id, date1, date2, term
+
+# Test the function with example inputs
+inputs = [
+    "i need to know the payment status for client 12345678910",
+    "show me the payment history for client 93216956291",
+    "what are all the transactions for client with id 10386392619 since March this year",
+    "i want the transactions done by client 94017382949 from 2/11/2022 to 3/6/2023",
+    "what is the transaction status for transaction number 1920-19379-96339",
+]
+
+for input_text in inputs:
+    client_id, transaction_id, date1, date2, term = extract_info_with_spacy(input_text)
+    print("Input Text:", input_text)
+    print("Client ID:", client_id)
+    print("Transaction ID:", transaction_id)
+    print("Date1:", date1)
+    print("Date2:", date2)
+    print("Term:", term)
+    print("=" * 50)
