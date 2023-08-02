@@ -89,5 +89,31 @@ def format_result(result_df):
     return header + table_str
 
 
+import re
+from fuzzywuzzy import fuzz
 
+# Single regex pattern for identifying payment-related phrases
+payment_pattern = r'(payment\s*status|check\s*status\s*of\s*payment|payment\s*result)'
+
+# Input text to search for payment-related phrases
+input_text = "I want to check the status of my payment. Can you provide me the payment result?"
+
+# Function to perform fuzzy matching on the regex pattern
+def fuzzy_match(regex_pattern, input_text):
+    matches = []
+    match = re.search(regex_pattern, input_text, re.IGNORECASE)
+    if match:
+        matches.append((regex_pattern, match.group(0)))
+    
+    # Sort matches based on fuzzy match score
+    matches.sort(key=lambda x: fuzz.ratio(x[1], input_text), reverse=True)
+    return matches
+
+# Perform fuzzy matching on the input text using the single regex pattern
+result = fuzzy_match(payment_pattern, input_text)
+
+# Print the matched phrases and their fuzzy match scores
+for pattern, match in result:
+    fuzzy_score = fuzz.ratio(match, input_text)
+    print(f"Pattern: '{pattern}', Matched Text: '{match}', Fuzzy Match Score: {fuzzy_score}")
 
